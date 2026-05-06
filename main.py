@@ -31,10 +31,24 @@ class Manager:
             )
 
     def addSub(self):
-        self.attendanceSub[input("Enter subject name: ")] = pd.DataFrame(
-            columns=["Date", "Status"]
+        sub = input("Enter subject name: ").upper()
+        self.attendanceSub[sub] = pd.DataFrame(columns=["Lec_Date", "Status"])
+
+        newRow = pd.DataFrame(
+            [
+                {
+                    "Subject": sub,
+                    "Present": 0,
+                    "Total Classes": 0,
+                    "Attendance Percentage": 0.0,
+                    "Last Updated": datetime.datetime.now().strftime("%a %b %d %Y"),
+                }
+            ]
         )
-        self.attendanceOverall
+
+        self.attendanceOverall = pd.concat(
+            [self.attendanceOverall, newRow], ignore_index=True
+        )
 
     def printAtt(self):
         print("OVERALL")
@@ -137,6 +151,77 @@ class Manager:
                 * 100
             )
 
+    def toggleAttendance(self, sub, date):
+        subDF = self.attendanceSub[sub]
+        if date not in subDF["Lec_Date"].values:
+            print("Invalid date")
+            return
+
+        status = subDF.loc[subDF["Lec_Date"] == date, "Status"].values[0]
+
+        self.attendanceSub[sub].loc[
+            self.attendanceSub[sub]["Lec_Date"] == date, "Status"
+        ] = not status
+
+        if status:
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Present"
+            ] -= 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+                ]
+                * 100
+            )
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Present"
+            ] -= 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Total Classes"
+                ]
+                * 100
+            )
+        else:
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Present"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+                ]
+                * 100
+            )
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Present"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Total Classes"
+                ]
+                * 100
+            )
+
     def run(self):
         self.getData()
         self.printAtt()
@@ -167,18 +252,32 @@ class Manager:
                 self.addAttendance(subjectList[int(sub)], status)
 
             case "2":
-                sub = input("Enter subject name: ")
-                date = input("Enter date (dd-mm-yyyy): ")
-                self.attendanceSub[sub].loc[
-                    self.attendanceSub[sub]["Date"] == date, "Status"
-                ] = (
-                    "P"
-                    if self.attendanceSub[sub]
-                    .loc[self.attendanceSub[sub]["Date"] == date, "Status"]
-                    .values[0]
-                    == "A"
-                    else "A"
+                subjectList = self.attendanceOverall["Subject"].tolist()
+                subjectList.remove("Overall")
+
+                print("Subjects:")
+                print(
+                    tabulate(
+                        enumerate(subjectList),
+                        headers=["Index", "Subject"],
+                        tablefmt="simple_outline",
+                    )
                 )
+
+                sub = input("Enter subject Index:")
+                sub = subjectList[int(sub)]
+                print(sub)
+                print(
+                    tabulate(
+                        self.attendanceSub[sub],
+                        headers="keys",
+                        tablefmt="simple_outline",
+                    )
+                )
+                date = input("Enter date (e.g. Wed May 06 2026): ")
+
+                self.toggleAttendance(sub, date)
+
             case "3":
                 self.addSub()
             case "4":
