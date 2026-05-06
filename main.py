@@ -22,10 +22,12 @@ class Manager:
             )
 
     def writeData(self):
-        self.attendanceOverall.to_csv(os.path.join(self.DATA_PATH, "Overall.csv"))
+        self.attendanceOverall.to_csv(
+            os.path.join(self.DATA_PATH, "Overall.csv"), index=False
+        )
         for i in self.attendanceSub:
             self.attendanceSub[i].to_csv(
-                os.path.join(self.DATA_PATH, "Sub/", f"{i}.csv")
+                os.path.join(self.DATA_PATH, "Sub/", f"{i}.csv"), index=False
             )
 
     def addSub(self):
@@ -61,19 +63,77 @@ class Manager:
         subDF = pd.concat([subDF, newRow], ignore_index=True)
         self.attendanceSub[sub] = subDF
 
+        self.attendanceOverall.loc[
+            self.attendanceOverall["Subject"] == "Overall", "Last Updated"
+        ] = datetime.datetime.now().strftime("%a %b %d %Y")
+
+        self.attendanceOverall.loc[
+            self.attendanceOverall["Subject"] == sub, "Last Updated"
+        ] = datetime.datetime.now().strftime("%a %b %d %Y")
+
         if status:
-            self.attendanceOverall["Overall"]["Present"] += 1
-            self.attendanceOverall["Overall"]["Total Classes"] += 1
-            self.attendanceOverall["Overall"]["Attendance Percentage"] = (
-                self.attendanceOverall["Overall"]["Present"]
-                / self.attendanceOverall["Overall"]["Total Classes"]
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Present"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+                ]
+                * 100
+            )
+
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Present"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Total Classes"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Total Classes"
+                ]
                 * 100
             )
         else:
-            self.attendanceOverall["Overall"]["Total Classes"] += 1
-            self.attendanceOverall["Overall"]["Attendance Percentage"] = (
-                self.attendanceOverall["Overall"]["Present"]
-                / self.attendanceOverall["Overall"]["Total Classes"]
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == "Overall", "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == "Overall", "Total Classes"
+                ]
+                * 100
+            )
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Total Classes"
+            ] += 1
+            self.attendanceOverall.loc[
+                self.attendanceOverall["Subject"] == sub, "Attendance Percentage"
+            ] = (
+                self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Present"
+                ]
+                / self.attendanceOverall.loc[
+                    self.attendanceOverall["Subject"] == sub, "Total Classes"
+                ]
                 * 100
             )
 
@@ -91,21 +151,20 @@ class Manager:
         match input("Enter your choice: "):
             case "1":
                 subjectList = self.attendanceOverall["Subject"].tolist()
-                # subjectList.remove("Overall")
+                subjectList.remove("Overall")
 
                 print("Subjects:")
                 print(
                     tabulate(
-                        subjectList,
+                        enumerate(subjectList),
                         headers=["Index", "Subject"],
-                        showindex=True,
                         tablefmt="simple_outline",
                     )
                 )
 
                 sub = input("Enter subject Index:")
                 status = input("Enter status (P/A): ")
-                self.addAttendance(subjectList[sub], status)
+                self.addAttendance(subjectList[int(sub)], status)
 
             case "2":
                 sub = input("Enter subject name: ")
