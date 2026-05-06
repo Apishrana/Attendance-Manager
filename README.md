@@ -70,8 +70,8 @@ When the app starts, it prints the current attendance tables and shows a menu:
 
 Choose `1`, select a subject by index, then enter:
 
-- `P` for present
-- `A` for absent
+- `P`/`p` for present
+- `A`/`a` for absent
 
 ### Toggle Attendance
 
