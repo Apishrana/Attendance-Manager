@@ -1,4 +1,7 @@
+from traceback import print_list
+
 import pandas as pd
+import datetime
 from tabulate import tabulate
 import os
 
@@ -44,6 +47,36 @@ class Manager:
                 )
             )
 
+    def addAttendance(self, sub, status):
+        subDF = self.attendanceSub[sub]
+        status = status.upper() == "P"
+        newRow = pd.DataFrame(
+            [
+                {
+                    "Lec_Date": datetime.datetime.now().strftime("%a %b %d %Y"),
+                    "Status": status,
+                }
+            ]
+        )
+        subDF = pd.concat([subDF, newRow], ignore_index=True)
+        self.attendanceSub[sub] = subDF
+
+        if status:
+            self.attendanceOverall["Overall"]["Present"] += 1
+            self.attendanceOverall["Overall"]["Total Classes"] += 1
+            self.attendanceOverall["Overall"]["Attendance Percentage"] = (
+                self.attendanceOverall["Overall"]["Present"]
+                / self.attendanceOverall["Overall"]["Total Classes"]
+                * 100
+            )
+        else:
+            self.attendanceOverall["Overall"]["Total Classes"] += 1
+            self.attendanceOverall["Overall"]["Attendance Percentage"] = (
+                self.attendanceOverall["Overall"]["Present"]
+                / self.attendanceOverall["Overall"]["Total Classes"]
+                * 100
+            )
+
     def run(self):
         self.getData()
         self.printAtt()
@@ -72,9 +105,8 @@ class Manager:
 
                 sub = input("Enter subject Index:")
                 status = input("Enter status (P/A): ")
-                self.attendanceSub[sub] = self.attendanceSub[sub].append(
-                    {"Date": date, "Status": status}, ignore_index=True
-                )
+                self.addAttendance(subjectList[sub], status)
+
             case "2":
                 sub = input("Enter subject name: ")
                 date = input("Enter date (dd-mm-yyyy): ")
