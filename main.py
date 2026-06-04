@@ -1,5 +1,3 @@
-from traceback import print_list
-
 import pandas as pd
 import datetime
 from tabulate import tabulate
@@ -8,18 +6,41 @@ import os
 
 class Manager:
     def __init__(self):
-        self.DATA_PATH = "./Data/"
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.DATA_PATH = os.path.join(self.BASE_DIR, "Data")
         self.attendanceOverall = pd.DataFrame
         self.attendanceSub = {}
 
+    def initializeDataFiles(self):
+        os.makedirs(os.path.join(self.DATA_PATH, "Sub"), exist_ok=True)
+
+        overall_file = os.path.join(self.DATA_PATH, "Overall.csv")
+
+        if not os.path.exists(overall_file):
+            pd.DataFrame(
+                [
+                    {
+                        "Subject": "Overall",
+                        "Present": 0,
+                        "Total Classes": 0,
+                        "Attendance Percentage": 0.0,
+                        "Last Updated": datetime.datetime.now().strftime("%a %b %d %Y"),
+                    }
+                ]
+            ).to_csv(overall_file, index=False)
+
     def getData(self):
-        self.attendanceOverall = pd.read_csv(
-            os.path.join(self.DATA_PATH, "Overall.csv")
-        )
-        for i in os.listdir(os.path.join(self.DATA_PATH, "Sub/")):
-            self.attendanceSub[i[:-4]] = pd.read_csv(
-                os.path.join(self.DATA_PATH, "Sub", i)
+        try:
+            self.attendanceOverall = pd.read_csv(
+                os.path.join(self.DATA_PATH, "Overall.csv")
             )
+            for i in os.listdir(os.path.join(self.DATA_PATH, "Sub/")):
+                self.attendanceSub[i[:-4]] = pd.read_csv(
+                    os.path.join(self.DATA_PATH, "Sub", i)
+                )
+        except:
+            self.initializeDataFiles()
+            self.getData()
 
     def writeData(self):
         self.attendanceOverall.to_csv(
